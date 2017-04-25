@@ -1,0 +1,375 @@
+#!/bin/sh 
+
+Ver=1.4.2
+LANG=C
+LANGUAGE="en_US.UTF-8"
+
+if [ $USER != "root" ]
+then
+	echo "is not root ?"
+	exit
+fi
+#NTPSERVER='192.123.53.2'
+#WEBSERVER='192.123.53.2'
+#NTPSERVER='192.168.11.186'
+#WEBSERVER='192.168.11.186'
+WEBSERVER='www.baidu.com'
+NTPSERVER='time.nist.gov'
+DATE=$(date "+%Y%m%d%H%M%S")
+#LOGDIR=./logs/$DATE/
+#INTERACTIVELOG=$LOGDIR/interactive.log
+LOGDIR=""
+Normal='\e[0m'
+BGreen='\e[1;32m'
+BRed='\e[1;31m'
+
+function run_test
+{
+	TEST_NAME=$1
+	TEST_PATH=$2
+	TEST_PARAMS=$3
+	TEST_PROMPT_PRE=$4
+	TEST_PROMPT_POST=$5
+	TEST_COMMAND="$TEST_PATH $TEST_PARAMS"
+	TEST_NAME_SAFE=$(echo $TEST_NAME | sed -e 's/ /_/g')
+	LOGFILE=$LOGDIR/$TEST_NAME_SAFE.log
+
+	source $TEST_COMMAND $LOGFILE
+
+}
+
+system_init() {
+	clear
+	stty erase '^H'
+	stty erase '^?'	
+}
+
+end_test() {
+	echo "Finish."
+}
+
+pause() {
+	read -n 1 -p "$*" INP
+	if [[ $INP != '' ]] ; then
+		echo -ne '\b \n'
+	fi
+}
+
+print_menu() {
+	echo 
+	echo -e "\e[39m"
+	echo "Test script Version : $Ver"
+	echo "=========================================="	
+	echo "(0)	Run the pre-defined all-test list"
+	echo "(1)	Run the automated test list"
+	echo "(2)	Run the interactive test list"
+	echo "(3)	[eMMC] - [eMMC Read\Write] test"
+	echo "(4)	[SDcard] - [SDcard detection] test"
+	echo "(5)	[SDcard] - [SDcard Read\Write] test"
+	echo "(6)	[SATA] - [SATA Read\Write] test"
+	echo "(7)	[USB Ports] - [USB Ports detection] test"
+	echo "(8)	[MINI USB] - [MINI USB detection] test"
+	echo "(9)	[GPIO] - [CN25 DB9 GPIO ports input\output] test"
+	echo "(10)	[GPIO] - [CN28 GPIO ports input\output] test"
+	echo "(11)	[GPIO] - [CN28 GPIO pcie_ports input\output] test"
+	echo "(12)	[GPIO] - [Power input detection] test"
+	echo "(13)	[RJ45 GBE] - [GBE] test"
+	echo "(14)	[RTC] - [RTC time set\get] test"
+	echo "(15)	[PCIe] - [PCIe device detection] test"
+	echo "(16)	[Audio] - [Audio input\output] test"
+	echo "(17)	[LVDS] - [Play video to LVDS] test"
+	echo "(18)	[LVDS] - [Show picture to LVDS] test"
+	echo "(19)	[HDMI] - [Show picture to HDMI] test"
+	echo "(20)	[UART] - [HW CTS\RTS flow control Send] test"
+	echo "(21)	[UART] - [HW CTS\RTS flow control Receive] test"
+	echo "(22)	[WDT] - [WDOUT] test"
+	echo "(23)	[I2C EEPROM] - [U29 I2C EEPROM] test"
+	echo "(24)	[SPI EEPROM] - [U10 SPI EEPROM] test"
+	echo "(25)	[NOR Flash] - [NOR Flash Erase\Write] test"
+	echo "(26)	[NOR Flash] - [NOR Flash Erase] test"
+	echo "(27)      [NOR Flash] - [Write Serial Number] test"
+	echo "(E/e)	exit test"
+	echo "=========================================="
+
+}
+
+do_test() {
+	echo 1 > /proc/sys/kernel/printk
+	system_init 
+	clear
+	while true;do
+		print_menu
+		read -p "select function : " res
+		case $res in 			
+			0)         
+                      		LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR				
+				echo ""                                         
+				echo "Test Log Directory : ${LOGDIR}"           
+				echo "================="
+				#chmod 777 ./factory_test.conf.default
+				#source ./factory_test.conf.default $WIFI_AP_NAME $WIFI_AP_PASSWORD $WEBSERVER
+				source ./automated.conf
+				echo ""
+				pause 'Press any key to continue interactive test'
+				echo ""
+				source ./interactive.conf
+				pause 'Press any key to continue...'						
+				;;
+			1)									
+                      		LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR				
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="				
+				source ./automated.conf
+				pause 'Press any key to continue...'
+				;;
+			2)								                           
+                      		LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/                
+				mkdir -p $LOGDIR				
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="				
+				source ./interactive.conf
+				pause 'Press any key to continue...'
+				;;
+			3)								
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR				
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[eMMC] - [eMMC Read\Write]" bin/emmc/test_emmc_read_write.sh "1"
+				pause 'Press any key to continue...'
+				;;
+			4)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR				
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[SDcard] - [SDcard detection]" bin/sdcard/test_sdcard_detection.sh ""
+				pause 'Press any key to continue...'
+				;;
+			5)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR				
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[SDcard] - [SDcard Read\Write]" bin/sdcard/test_sdcard_read_write.sh "1"
+				pause 'Press any key to continue...'
+				;;
+			6)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""
+				echo "Test Log Directory : ${LOGDIR}"
+				echo "================="
+				run_test "[SATA] - [SATA Read\Write]" bin/sata/test_sata_read_write.sh "1"
+				pause 'Press any key to continue...'
+				;;
+			7)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[USB Ports] - [USB Ports detection]" bin/usb/test_usb_ports_detection.sh ""
+				pause 'Press any key to continue...'
+				;;
+			8)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[MINI USB] - [MINI USB detection]" bin/usb/test_mini_usb_detection.sh ""
+				pause 'Press any key to continue...'
+				;;
+			9)                                                                              
+        			LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/                              
+        			mkdir -p $LOGDIR                                                        
+        			echo ""                                                                 
+        			echo "Test Log Directory : ${LOGDIR}"                                   
+        			echo "================="                                                
+        			run_test "[GPIO] - [CN25 DB9 GPIO ports input\output]" bin/gpio/test_gpio_input_output.sh "CN25"
+        			pause 'Press any key to continue...'                                    
+        			;;
+			10)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[GPIO] - [CN28 GPIO ports input\output]" bin/gpio/test_gpio_input_output.sh "CN28"
+				pause 'Press any key to continue...'
+				;;
+			11)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[GPIO] - [CN28 GPIO pcie_ports input\output]" bin/gpio/test_gpio_pcie_ports.sh ""
+				pause 'Press any key to continue...'
+				;;
+			12)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[GPIO] - [Power input detection]" bin/gpio/test_gpio_power_port.sh ""
+				pause 'Press any key to continue...'
+				;;
+			13)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/	
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[RJ45 GBE] - [GBE]" bin/net/test_eth.sh "eth0 5"
+				pause 'Press any key to continue...'
+				;;
+			14)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[RTC] - [RTC time set\get]" bin/rtc/test_rtc_set_get.sh "$NTPSERVER"
+				pause 'Press any key to continue...'
+				;;
+			15)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[PCIe] - [PCIe device detection]" bin/pcie/test_pcie_device_detection.sh ""
+				pause 'Press any key to continue...'
+				;;	
+			16)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[Audio] - [Audio input\output]" bin/audio/test_audio_input_output.sh ""
+				pause 'Press any key to continue...'
+				;;
+			17)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[LVDS] - [Play video to LVDS]" bin/fb/test_lvds_play_video.sh "/home/root/video/1.mp4"
+				pause 'Press any key to continue...'
+				;;
+			18)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[LVDS] - [Show picture to LVDS]" bin/fb/test_lvds_show_picture.sh "bin/fb/1.png"
+				pause 'Press any key to continue...'
+				;;
+			19)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[HDMI] - [Show picture to HDMI]" bin/fb/test_hdmi_show_picture.sh "bin/fb/1.png"
+				pause 'Press any key to continue...'
+				;;
+			20)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[UART] - [HW CTS\RTS flow control Send]" bin/uart/test_uart_flow_control.sh "/dev/ttymxc2"
+				pause 'Press any key to continue...'
+				;;
+			21)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[UART] - [HW CTS\RTS flow control Receive]" bin/uart/test_uart_flow_control.sh "/dev/ttymxc2"
+				pause 'Press any key to continue...'
+				;;			
+			22)                                                    
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR                                         
+				echo ""                                                  
+				echo "Test Log Directory : ${LOGDIR}"                    
+				echo "================="                                 
+				run_test "[WDT] - [WDOUT]"  bin/wdt/test_wdt_wdout.sh ""
+				pause 'Press any key to continue...'            
+				;;
+			23)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[I2C EEPROM] - [U29 I2C EEPROM]" bin/eeprom/test_i2c_eeprom.sh ""
+				pause 'Press any key to continue...'
+				;;
+			24)
+                                LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+                                mkdir -p $LOGDIR
+                                echo ""
+                                echo "Test Log Directory : ${LOGDIR}"
+                                echo "================="
+                                run_test "[SPI EEPROM] - [U10 SPI EEPROM]" bin/eeprom/test_spi_eeprom.sh ""
+                                pause 'Press any key to continue...'
+                                ;;
+			25)
+                                LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+                                mkdir -p $LOGDIR
+                                echo ""
+                                echo "Test Log Directory : ${LOGDIR}"
+                                echo "================="
+                                run_test "[NOR Flash] - [NOR Flash Erase\Write]" bin/mtd/test_nor_flash_erase_write.sh ""
+                                pause 'Press any key to continue...'
+                                ;;
+			26)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""                                 
+				echo "Test Log Directory : ${LOGDIR}"   
+				echo "================="
+				run_test "[NOR Flash] - [NOR Flash Erase]" bin/mtd/test_nor_erase.sh ""
+				pause 'Press any key to continue...'
+				;;
+			27)
+				LOGDIR=./logs/temp/`date "+%Y%m%d%H%M%S"`/
+				mkdir -p $LOGDIR
+				echo ""
+				echo "Test Log Directory : ${LOGDIR}"
+				echo "================="
+				run_test "[NOR Flash] - [Write Serial Number]" bin/mtd/test_write_serial.sh ""
+				pause 'Press any key to continue...'
+				;;
+
+			Q|q|E|e)
+				end_test
+				echo 7 > /proc/sys/kernel/printk
+				exit 0
+				;;
+			*)
+				;;
+		esac
+	done
+}
+
+
+do_test
